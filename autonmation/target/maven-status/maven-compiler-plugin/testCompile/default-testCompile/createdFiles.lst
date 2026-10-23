@@ -1,0 +1,4 @@
+vn/edu/softwaretesting/pages/LoginPage.class
+vn/edu/softwaretesting/core/WebTestBase.class
+vn/edu/softwaretesting/tests/LoginTest.class
+vn/edu/softwaretesting/pages/LoginPage$LoginResult.class
