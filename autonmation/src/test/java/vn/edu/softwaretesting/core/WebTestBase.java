@@ -12,6 +12,7 @@ import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 
 public abstract class WebTestBase {
+
     protected WebDriver driver;
     protected String baseUrl;
 
@@ -48,11 +49,6 @@ public abstract class WebTestBase {
             options.addArguments("--headless=new");
         }
         options.addArguments("--disable-search-engine-choice-screen");
-        options.addArguments("--disable-features=PasswordLeakDetection");
-        options.setExperimentalOption("prefs", java.util.Map.of(
-                "credentials_enable_service", false,
-                "profile.password_manager_enabled", false,
-                "profile.password_manager_leak_detection", false));
         return options;
     }
 

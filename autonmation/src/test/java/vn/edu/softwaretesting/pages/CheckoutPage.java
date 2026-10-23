@@ -15,7 +15,6 @@ public class CheckoutPage {
     private static final By POSTAL = By.id("postal-code");
     private static final By CONTINUE = By.id("continue");
     private static final By CANCEL = By.id("cancel");
-    private static final By ERROR = By.cssSelector("[data-test='error']");
 
     private static final By SUBTOTAL = By.cssSelector(".summary_subtotal_label");
     private static final By TAX = By.cssSelector(".summary_tax_label");
@@ -46,11 +45,6 @@ public class CheckoutPage {
         wait.until(ExpectedConditions.urlContains("checkout-step-two.html"));
         wait.until(ExpectedConditions.visibilityOfElementLocated(TOTAL));
         return this;
-    }
-
-    public String continueExpectingError() {
-        wait.until(ExpectedConditions.elementToBeClickable(CONTINUE)).click();
-        return readText(ERROR);
     }
 
     public String continueToOverviewAndReadTotal() {
@@ -87,7 +81,7 @@ public class CheckoutPage {
     private void type(By locator, String value) {
         WebElement field = wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
         field.clear();
-        field.sendKeys(value == null ? "" : value);
+        field.sendKeys(value);
     }
 
     private String readText(By locator) {

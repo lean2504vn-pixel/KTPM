@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +17,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import vn.edu.softwaretesting.core.WebTestBase;
 import vn.edu.softwaretesting.pages.CartPage;
@@ -38,10 +43,31 @@ class CheckoutTest extends WebTestBase {
 
     @BeforeEach
     void loginAsStandardUser() {
+        restartChromeWithoutPasswordPopup();
         var result = new LoginPage(driver, baseUrl).open()
                 .login("standard_user", "secret_sauce");
         assertTrue(result.accepted(), "Tien dieu kien: dang nhap standard_user thanh cong");
         inventory = new InventoryPage(driver);
+    }
+
+    private void restartChromeWithoutPasswordPopup() {
+        if (!(driver instanceof ChromeDriver)) {
+            return;
+        }
+        driver.quit();
+        ChromeOptions options = new ChromeOptions();
+        if (Boolean.parseBoolean(System.getProperty("headless", "true"))) {
+            options.addArguments("--headless=new");
+        }
+        options.addArguments("--disable-search-engine-choice-screen",
+                "--disable-features=PasswordLeakDetection");
+        options.setExperimentalOption("prefs", Map.of(
+                "credentials_enable_service", false,
+                "profile.password_manager_enabled", false,
+                "profile.password_manager_leak_detection", false));
+        driver = new ChromeDriver(options);
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(20));
+        driver.manage().window().setSize(new Dimension(1440, 900));
     }
 
     @Test
