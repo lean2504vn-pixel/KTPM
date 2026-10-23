@@ -1,4 +1,0 @@
-username,password,accepted,expectedEvidence
-standard_user,secret_sauce,true,inventory.html
-locked_out_user,secret_sauce,false,locked out
-standard_user,wrong_password,false,Username and password do not match
