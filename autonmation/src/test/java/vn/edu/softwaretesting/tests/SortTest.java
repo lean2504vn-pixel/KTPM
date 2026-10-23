@@ -56,7 +56,6 @@ class SortTest extends WebTestBase {
         Comparator<String> order = ascending
                 ? Comparator.naturalOrder() : Comparator.reverseOrder();
         expected.sort(order);
-[]
         assertEquals(PRODUCT_COUNT, actual.size(),
                 () -> id + ": unexpected number of products");
         assertEquals(expected, actual,
