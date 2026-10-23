@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.math.BigDecimal;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,7 +56,7 @@ class SortTest extends WebTestBase {
         Comparator<String> order = ascending
                 ? Comparator.naturalOrder() : Comparator.reverseOrder();
         expected.sort(order);
-
+[]
         assertEquals(PRODUCT_COUNT, actual.size(),
                 () -> id + ": unexpected number of products");
         assertEquals(expected, actual,
@@ -71,9 +72,9 @@ class SortTest extends WebTestBase {
     void sortByPrice(String id, String option, boolean ascending) {
         InventoryPage inventory = openInventoryAs("standard_user");
 
-        List<Double> actual = inventory.sortBy(option).getProductPrices();
-        List<Double> expected = new ArrayList<>(actual);
-        Comparator<Double> order = ascending
+        List<BigDecimal> actual = inventory.sortBy(option).getProductPrices();
+        List<BigDecimal> expected = new ArrayList<>(actual);
+        Comparator<BigDecimal> order = ascending
                 ? Comparator.naturalOrder() : Comparator.reverseOrder();
         expected.sort(order);
 
@@ -91,8 +92,8 @@ class SortTest extends WebTestBase {
     void problemUserSortByPriceIsNotApplied() {
         InventoryPage inventory = openInventoryAs("problem_user");
 
-        List<Double> actual = inventory.sortBy("lohi").getProductPrices();
-        List<Double> expected = new ArrayList<>(actual);
+        List<BigDecimal> actual = inventory.sortBy("lohi").getProductPrices();
+        List<BigDecimal> expected = new ArrayList<>(actual);
         expected.sort(Comparator.naturalOrder());
 
         assertEquals(expected, actual,
