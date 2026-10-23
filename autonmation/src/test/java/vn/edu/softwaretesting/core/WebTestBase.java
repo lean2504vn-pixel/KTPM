@@ -49,6 +49,13 @@ public abstract class WebTestBase {
             options.addArguments("--headless=new");
         }
         options.addArguments("--disable-search-engine-choice-screen");
+        // Tat trinh quan ly mat khau / canh bao "mat khau bi lo" cua Chrome:
+        // popup nay hien sau khi dang nhap bang secret_sauce va chan cac cu click tiep theo.
+        options.addArguments("--disable-features=PasswordLeakDetection");
+        options.setExperimentalOption("prefs", java.util.Map.of(
+                "credentials_enable_service", false,
+                "profile.password_manager_enabled", false,
+                "profile.password_manager_leak_detection", false));
         return options;
     }
 
