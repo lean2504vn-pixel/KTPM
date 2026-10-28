@@ -15,7 +15,8 @@ public class LoginTest extends WebTestBase {
     @ParameterizedTest(name = "{0}: user='{1}', accepted={3}")
     @CsvFileSource(resources = "/login-data.csv", numLinesToSkip = 1)
     @DisplayName("FR-01: Login Data-Driven Testing")
-    void testLoginWithCsvData(String testId, String username, String password, boolean accepted, String expectedEvidence) {
+    void testLoginWithCsvData(String testId, String username, String password, boolean accepted,
+            String expectedEvidence) {
         LoginPage loginPage = new LoginPage(driver, baseUrl);
         loginPage.open();
 
@@ -29,7 +30,8 @@ public class LoginTest extends WebTestBase {
         } else {
             String errorMsg = result.message();
             assertTrue(errorMsg.contains(expectedEvidence),
-                    () -> testId + " expected error message to contain '" + expectedEvidence + "', but got: " + errorMsg);
+                    () -> testId + " expected error message to contain '" + expectedEvidence + "', but got: "
+                            + errorMsg);
         }
     }
 }
