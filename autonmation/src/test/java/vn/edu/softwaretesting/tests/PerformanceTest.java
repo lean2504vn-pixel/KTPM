@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -21,56 +20,37 @@ import vn.edu.softwaretesting.pages.LoginPage.LoginResult;
 @DisplayName("NFR-01: Login performance")
 class PerformanceTest extends WebTestBase {
 
-    private static final String PASSWORD = "secret_sauce";
     private static final int RUNS = 5;
-    private static final long LIMIT_MILLIS = 3000;
-
-    private LoginPage loginPage;
-
-    @BeforeEach
-    void createLoginPage() {
-        loginPage = new LoginPage(driver, baseUrl);
-    }
-
-    private long medianLoginMillis(String username) {
-        List<Long> samples = new ArrayList<>();
-        for (int i = 0; i < RUNS; i++) {
-            if (i > 0) {
-                driver.manage().deleteAllCookies();
-            }
-            loginPage.open();
-
-            long start = System.nanoTime();
-            LoginResult result = loginPage.login(username, PASSWORD);
-            long millis = Duration.ofNanos(System.nanoTime() - start).toMillis();
-
-            assertTrue(result.accepted(),
-                    "Login failed for " + username + ": " + result.message());
-            samples.add(millis);
-        }
-        Collections.sort(samples);
-        System.out.println("[NFR-01] " + username + " samples (ms, sorted) = " + samples);
-        return samples.get(RUNS / 2);
-    }
 
     @Test
     @Tag("known-bug")
     @DisplayName("TC-NFR-01 [BUG-01]: performance_glitch_user - inventory loads within 3 s (median of 5)")
-    void glitchUserInventoryLoadsWithinThreeSeconds() {
-        long median = medianLoginMillis("performance_glitch_user");
+    void inventoryLoadsWithinThreeSeconds() {
+        LoginPage loginPage = new LoginPage(driver, baseUrl);
+        List<Long> samples = new ArrayList<>();
+        boolean allAccepted = true;
 
-        assertTrue(median <= LIMIT_MILLIS,
-                () -> "Median of " + RUNS + " runs was " + median
-                        + " ms, limit is " + LIMIT_MILLIS + " ms");
-    }
+        for (int i = 0; i < RUNS; i++) {
+            if (i > 0) {
+                driver.manage().deleteAllCookies(); // mỗi lần đo bắt đầu từ trạng thái chưa đăng nhập
+            }
+            loginPage.open();
 
-    @Test
-    @DisplayName("TC-NFR-01: standard_user - inventory loads within 3 s (median of 5)")
-    void standardUserInventoryLoadsWithinThreeSeconds() {
-        long median = medianLoginMillis("standard_user");
+            long start = System.nanoTime();
+            LoginResult result = loginPage.login("performance_glitch_user", "secret_sauce");
+            long millis = Duration.ofNanos(System.nanoTime() - start).toMillis();
 
-        assertTrue(median <= LIMIT_MILLIS,
-                () -> "Median of " + RUNS + " runs was " + median
-                        + " ms, limit is " + LIMIT_MILLIS + " ms");
+            samples.add(millis);
+            allAccepted &= result.accepted();
+        }
+
+        Collections.sort(samples);
+        long median = samples.get(RUNS / 2);
+        System.out.println("[NFR-01] performance_glitch_user samples (ms, sorted) = " + samples);
+
+        assertTrue(allAccepted, "Login was not accepted for performance_glitch_user");
+        assertTrue(median <= 3000,
+                () -> "Inventory took " + median + " ms (median of " + RUNS
+                        + " runs; samples " + samples + ")");
     }
 }
