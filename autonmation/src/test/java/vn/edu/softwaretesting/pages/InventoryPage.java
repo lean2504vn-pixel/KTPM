@@ -12,7 +12,8 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 /**
- * Page Object trang Inventory. Chỉ đóng gói các thao tác UI, không chứa assertion.
+ * Page Object trang Inventory. Chỉ đóng gói các thao tác UI, không chứa
+ * assertion.
  * Gia Bảo có thể thêm các hàm sortBy/names/prices vào chính lớp này khi merge.
  */
 public class InventoryPage {
@@ -36,7 +37,7 @@ public class InventoryPage {
     public InventoryPage addToCart(String productSlug) {
         By add = By.id("add-to-cart-" + productSlug);
         wait.until(ExpectedConditions.elementToBeClickable(add)).click();
-        // Xác nhận trạng thái Add -> Remove thay vì chờ một khoảng thời gian cố định.
+
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("remove-" + productSlug)));
         return this;
     }
@@ -48,10 +49,6 @@ public class InventoryPage {
         return this;
     }
 
-    /**
-     * Chỉ sử dụng với trạng thái giỏ trống trong kiểm thử BVA.
-     * Tìm lại button sau mỗi lần click nhằm tránh StaleElementReferenceException.
-     */
     public InventoryPage addFirstNProducts(int n) {
         if (n < 0 || n > 6) {
             throw new IllegalArgumentException("So san pham phai nam trong [0, 6]: " + n);
@@ -83,7 +80,8 @@ public class InventoryPage {
     public ProductInfo getProductInfo(String slug) {
         By button = By.cssSelector("button[id='add-to-cart-" + slug + "'],button[id='remove-" + slug + "']");
         WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(button));
-        WebElement item = element.findElement(By.xpath("./ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' inventory_item ')]"));
+        WebElement item = element.findElement(
+                By.xpath("./ancestor::*[contains(concat(' ', normalize-space(@class), ' '), ' inventory_item ')]"));
         String name = item.findElement(ITEM_NAME).getText();
         BigDecimal price = parsePrice(item.findElement(ITEM_PRICE).getText());
         return new ProductInfo(slug, name, price);
@@ -102,11 +100,9 @@ public class InventoryPage {
         return new BigDecimal(text.replace("$", "").trim());
     }
 
-    public record ProductInfo(String slug, String name, BigDecimal price) { }
+    public record ProductInfo(String slug, String name, BigDecimal price) {
+    }
 
-    // ===== TV5: PHẦN SORT (FR-04) =====================================
-
-    /** optionValue: "az" | "za" | "lohi" | "hilo". */
     public InventoryPage sortBy(String optionValue) {
         WebElement dropdown = wait.until(
                 ExpectedConditions.visibilityOfElementLocated(SORT_DROPDOWN));
@@ -116,7 +112,7 @@ public class InventoryPage {
 
     public List<String> getProductNames() {
         return wait.until(ExpectedConditions
-                        .visibilityOfAllElementsLocatedBy(ITEM_NAME))
+                .visibilityOfAllElementsLocatedBy(ITEM_NAME))
                 .stream()
                 .map(WebElement::getText)
                 .toList();
@@ -124,7 +120,7 @@ public class InventoryPage {
 
     public List<BigDecimal> getProductPrices() {
         return wait.until(ExpectedConditions
-                        .visibilityOfAllElementsLocatedBy(ITEM_PRICE))
+                .visibilityOfAllElementsLocatedBy(ITEM_PRICE))
                 .stream()
                 .map(e -> parsePrice(e.getText()))
                 .toList();

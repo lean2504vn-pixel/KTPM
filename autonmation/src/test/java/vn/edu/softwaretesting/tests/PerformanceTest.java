@@ -23,7 +23,7 @@ class PerformanceTest extends WebTestBase {
 
     private static final String PASSWORD = "secret_sauce";
     private static final int RUNS = 5;
-    private static final long LIMIT_MILLIS = 3000; // KHÔNG nới ngưỡng này
+    private static final long LIMIT_MILLIS = 3000;
 
     private LoginPage loginPage;
 
@@ -32,17 +32,11 @@ class PerformanceTest extends WebTestBase {
         loginPage = new LoginPage(driver, baseUrl);
     }
 
-    /**
-     * Đo RUNS lần "nhấn Login -> trang sản phẩm hiển thị" và trả về trung vị.
-     * Mỗi lần đo bắt đầu từ trang đăng nhập sạch (xóa cookie phiên cũ).
-     * Lưu ý: LoginPage.login() chờ bằng WebDriverWait (polling 500 ms) nên
-     * số đo có sai số tối đa khoảng 0,5 s; với ngưỡng 3 s vẫn đủ phân biệt.
-     */
     private long medianLoginMillis(String username) {
         List<Long> samples = new ArrayList<>();
         for (int i = 0; i < RUNS; i++) {
             if (i > 0) {
-                driver.manage().deleteAllCookies(); // reset phiên, không phải thao tác UI
+                driver.manage().deleteAllCookies();
             }
             loginPage.open();
 
@@ -56,7 +50,7 @@ class PerformanceTest extends WebTestBase {
         }
         Collections.sort(samples);
         System.out.println("[NFR-01] " + username + " samples (ms, sorted) = " + samples);
-        return samples.get(RUNS / 2); // phần tử thứ 3 trong 5 giá trị đã sắp xếp
+        return samples.get(RUNS / 2);
     }
 
     @Test

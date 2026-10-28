@@ -54,6 +54,6 @@ public final class LoginPage {
     }
 
     public record LoginResult(boolean accepted, String currentUrl,
-                              String message) {
+            String message) {
     }
 }
