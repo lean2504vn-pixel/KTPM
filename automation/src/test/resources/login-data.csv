@@ -1,0 +1,11 @@
+testId,username,password,accepted,expectedEvidence
+TC-LOGIN-EP1,standard_user,secret_sauce,true,inventory.html
+TC-LOGIN-EP2,locked_out_user,secret_sauce,false,Sorry, this user has been locked out.
+TC-LOGIN-EP3,"",secret_sauce,false,Username is required
+TC-LOGIN-EP4,abc_user,secret_sauce,false,Username and password do not match
+TC-LOGIN-EP5,Standard_User,secret_sauce,false,Username and password do not match
+TC-LOGIN-EP6,standard_user,"",false,Password is required
+TC-LOGIN-EP7,standard_user,wrong_password,false,Username and password do not match
+TC-LOGIN-EP8,standard_user,Secret_Sauce,false,Username and password do not match
+TC-LOGIN-DT1,"","",false,Username is required
+TC-LOGIN-DT3,locked_out_user,wrong_password,false,Username and password do not match
