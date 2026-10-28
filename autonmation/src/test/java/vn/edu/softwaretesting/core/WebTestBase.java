@@ -2,7 +2,6 @@ package vn.edu.softwaretesting.core;
 
 import java.time.Duration;
 import java.util.Locale;
-import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,13 +49,6 @@ public abstract class WebTestBase {
             options.addArguments("--headless=new");
         }
         options.addArguments("--disable-search-engine-choice-screen");
-        // Test profile only. Do not change the user's personal Chrome security settings.
-        // SauceDemo uses publicly known demo credentials.
-        options.setExperimentalOption("prefs", Map.of(
-                "credentials_enable_service", false,
-                "profile.password_manager_enabled", false,
-                "profile.password_manager_leak_detection", false
-        ));
         return options;
     }
 
