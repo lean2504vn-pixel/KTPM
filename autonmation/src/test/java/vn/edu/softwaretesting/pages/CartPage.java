@@ -10,7 +10,6 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-/** Page Object cho cart.html. */
 public class CartPage {
     private static final By CART_CONTENTS = By.id("cart_contents_container");
     private static final By CART_ITEMS = By.cssSelector(".cart_item");
@@ -38,8 +37,7 @@ public class CartPage {
         return driver.findElements(CART_ITEMS).stream().map(item -> new CartItem(
                 item.findElement(ITEM_NAME).getText(),
                 new BigDecimal(item.findElement(ITEM_PRICE).getText().replace("$", "").trim()),
-                Integer.parseInt(item.findElement(ITEM_QUANTITY).getText().trim())
-        )).toList();
+                Integer.parseInt(item.findElement(ITEM_QUANTITY).getText().trim()))).toList();
     }
 
     public boolean containsProduct(String name) {
@@ -81,7 +79,6 @@ public class CartPage {
         return new InventoryPage(driver);
     }
 
-    /** Dùng chung cho thành viên làm FR-03. */
     public CheckoutPage checkout() {
         wait.until(ExpectedConditions.elementToBeClickable(CHECKOUT)).click();
         wait.until(ExpectedConditions.urlContains("checkout-step-one.html"));
@@ -92,5 +89,6 @@ public class CartPage {
         return driver.getCurrentUrl();
     }
 
-    public record CartItem(String name, BigDecimal price, int quantity) { }
+    public record CartItem(String name, BigDecimal price, int quantity) {
+    }
 }
