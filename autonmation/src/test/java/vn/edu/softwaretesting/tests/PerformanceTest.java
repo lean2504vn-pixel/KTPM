@@ -32,17 +32,15 @@ class PerformanceTest extends WebTestBase {
         loginPage = new LoginPage(driver, baseUrl);
     }
 
-    /**
-     * Đo RUNS lần "nhấn Login -> trang sản phẩm hiển thị" và trả về trung vị.
-     * Mỗi lần đo bắt đầu từ trang đăng nhập sạch (xóa cookie phiên cũ).
-     * Lưu ý: LoginPage.login() chờ bằng WebDriverWait (polling 500 ms) nên
-     * số đo có sai số tối đa khoảng 0,5 s; với ngưỡng 3 s vẫn đủ phân biệt.
-     */
-    private long medianLoginMillis(String username) {
+    /** Kết quả đo: các mẫu thời gian (ms, đã sắp xếp) và việc mọi lần đăng nhập có được chấp nhận hay không. */
+    private record Measurement(List<Long> samples, boolean allAccepted) { }
+
+    private Measurement measure(String username) {
         List<Long> samples = new ArrayList<>();
+        boolean allAccepted = true;
         for (int i = 0; i < RUNS; i++) {
             if (i > 0) {
-                driver.manage().deleteAllCookies(); // reset phiên, không phải thao tác UI
+                driver.manage().deleteAllCookies(); // reset phiên trước mỗi lần đo
             }
             loginPage.open();
 
@@ -50,33 +48,34 @@ class PerformanceTest extends WebTestBase {
             LoginResult result = loginPage.login(username, PASSWORD);
             long millis = Duration.ofNanos(System.nanoTime() - start).toMillis();
 
-            assertTrue(result.accepted(),
-                    "Login failed for " + username + ": " + result.message());
             samples.add(millis);
+            allAccepted &= result.accepted();
         }
         Collections.sort(samples);
         System.out.println("[NFR-01] " + username + " samples (ms, sorted) = " + samples);
-        return samples.get(RUNS / 2); // phần tử thứ 3 trong 5 giá trị đã sắp xếp
+        return new Measurement(samples, allAccepted);
+    }
+
+    private void assertWithinLimit(String username, Measurement m) {
+        long median = m.samples().get(RUNS / 2);
+        // Ghi số đo trước khi assert, để báo cáo luôn có số thật.
+        assertTrue(median <= LIMIT_MILLIS,
+                () -> "Median of " + RUNS + " runs = " + median + " ms, limit "
+                        + LIMIT_MILLIS + " ms; samples " + m.samples());
+        assertTrue(m.allAccepted(),
+                () -> "Login was not accepted for " + username);
     }
 
     @Test
     @Tag("known-bug")
     @DisplayName("TC-NFR-01 [BUG-01]: performance_glitch_user - inventory loads within 3 s (median of 5)")
     void glitchUserInventoryLoadsWithinThreeSeconds() {
-        long median = medianLoginMillis("performance_glitch_user");
-
-        assertTrue(median <= LIMIT_MILLIS,
-                () -> "Median of " + RUNS + " runs was " + median
-                        + " ms, limit is " + LIMIT_MILLIS + " ms");
+        assertWithinLimit("performance_glitch_user", measure("performance_glitch_user"));
     }
 
     @Test
-    @DisplayName("TC-NFR-01: standard_user - inventory loads within 3 s (median of 5)")
+    @DisplayName("TC-NFR-02: standard_user - inventory loads within 3 s (median of 5)")
     void standardUserInventoryLoadsWithinThreeSeconds() {
-        long median = medianLoginMillis("standard_user");
-
-        assertTrue(median <= LIMIT_MILLIS,
-                () -> "Median of " + RUNS + " runs was " + median
-                        + " ms, limit is " + LIMIT_MILLIS + " ms");
+        assertWithinLimit("standard_user", measure("standard_user"));
     }
 }
