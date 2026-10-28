@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -71,5 +72,25 @@ class SortTest extends WebTestBase {
                 () -> id + ": unexpected number of products");
         assertEquals(expected, actual,
                 () -> id + ": prices are not sorted for option " + option);
+    }
+
+    // Lỗi đã biết BUG-04: problem_user sort không hoạt động
+    @Test
+    @Tag("known-bug")
+    @DisplayName("TC-SORT-05 [BUG-04]: problem_user - Price (low to high) is not applied")
+    void problemUserSortByPriceIsNotApplied() {
+        driver.manage().deleteAllCookies(); // đăng xuất phiên standard_user
+        LoginResult result = new LoginPage(driver, baseUrl)
+                .open()
+                .login("problem_user", "secret_sauce");
+        assertTrue(result.accepted(),
+                () -> "Precondition failed for problem_user: " + result.message());
+
+        List<BigDecimal> actual = new InventoryPage(driver).sortBy("lohi").getProductPrices();
+        List<BigDecimal> expected = new ArrayList<>(actual);
+        expected.sort(Comparator.naturalOrder());
+
+        assertEquals(expected, actual,
+                "problem_user: prices are not in ascending order after sorting");
     }
 }
