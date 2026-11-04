@@ -2,6 +2,7 @@ package vn.edu.softwaretesting.tests;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -115,6 +117,28 @@ class CheckoutTest extends WebTestBase {
         assertEquals(1, cart.getCartItemCount());
         assertTrue(cart.containsProduct("Sauce Labs Backpack"));
         assertEquals(1, cart.getBadgeCount());
+    }
+
+    @Test
+    @Tag("known-bug")
+    @DisplayName("TC-CHK-06 [BUG-05]: empty cart must not complete an order")
+    void emptyCartMustNotCompleteOrder() {
+        assertFalse(inventory.isBadgeDisplayed(), "Tien dieu kien: gio hang trong");
+        CartPage cart = inventory.openCart();
+        assertEquals(0, cart.getCartItemCount(), "Tien dieu kien: gio hang trong");
+
+        String message = null;
+        try {
+            message = cart.checkout()
+                    .fillInformation("An", "Nguyen", "700000")
+                    .continueToOverview()
+                    .finishAndGetMessage();
+        } catch (TimeoutException blockedBySystem) {
+            message = null;
+        }
+
+        assertNotEquals("Thank you for your order!", message,
+                "BUG-05: gio hang trong van thanh toan va hoan tat don hang");
     }
 
     static Stream<Arguments> taxBoundaryCases() {
