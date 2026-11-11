@@ -28,6 +28,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import vn.edu.softwaretesting.core.ConfigDrivenFlowRunner;
 import vn.edu.softwaretesting.core.WebTestBase;
 import vn.edu.softwaretesting.pages.CartPage;
 import vn.edu.softwaretesting.pages.CheckoutPage;
@@ -176,7 +177,6 @@ class CheckoutTest extends WebTestBase {
 
         new LoginPage(driver, baseUrl).open().login(username, "secret_sauce");
 
-        
         driver.get(baseUrl + "/checkout-step-one.html");
         checkoutPage = new CheckoutPage(driver);
     }
@@ -192,7 +192,7 @@ class CheckoutTest extends WebTestBase {
             "TC-CHK-DT7, An,   , 70000, Error: Last Name is required"
     })
     void missingFieldShowsError(String id, String first, String last, String postal, String expected) {
-     
+
         navigateToCheckout("standard_user");
 
         String message = checkoutPage
@@ -207,26 +207,28 @@ class CheckoutTest extends WebTestBase {
     void allFieldsValidNavigatesToOverview() {
         navigateToCheckout("standard_user");
 
-        checkoutPage.fillInformation("An", "Le", "70000");
-        driver.findElement(By.id("continue")).click();
+        checkoutPage.fillInformation("An", "Le", "70000").continueToOverview();
 
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(8));
-        boolean isNavigated = wait.until(ExpectedConditions.urlContains("checkout-step-two.html"));
+        assertTrue(checkoutPage.currentUrl().contains("checkout-step-two.html"),
+                "Test Case 8: Phải chuyển sang trang Overview khi điền đầy đủ thông tin hợp lệ");
+    }
 
-        assertTrue(isNavigated, "Test Case 8: Phải chuyển sang trang Overview khi điền đầy đủ thông tin hợp lệ");
+    @Test
+    @DisplayName("TC-CHK-01-DD2 [BONUS]: Data-driven muc 2 doc URL, locator, action, value tu checkout-flow.csv")
+    void checkoutFlowConfiguredFromCsv() {
+        new ConfigDrivenFlowRunner(driver).executeFlow("/checkout-flow.csv");
     }
 
     @Test
     @Tag("known-bug")
     @DisplayName("TC-CHK-BUG03 [BUG-03]: problem_user cannot fill Last Name in checkout")
     void problemUserCannotFillLastName() {
-   
+
         navigateToCheckout("problem_user");
 
         checkoutPage.fillInformation("An", "Le", "70000");
 
-        WebElement lastNameInput = driver.findElement(By.id("last-name"));
-        String actualLastName = lastNameInput.getAttribute("value");
+        String actualLastName = checkoutPage.getLastNameValue();
 
         assertEquals("Le", actualLastName,
                 "Bug 03: Expected 'Le' to be in Last Name field, but field was empty or overridden.");
