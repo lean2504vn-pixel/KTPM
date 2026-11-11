@@ -8,4 +8,8 @@ TC-LOGIN-EP6,standard_user,"",false,Password is required
 TC-LOGIN-EP7,standard_user,wrong_password,false,Username and password do not match
 TC-LOGIN-EP8,standard_user,Secret_Sauce,false,Username and password do not match
 TC-LOGIN-DT1,"","",false,Username is required
+<<<<<<< HEAD
 TC-LOGIN-DT2,locked_out_user,wrong_password,false,Username and password do not match
+=======
+TC-LOGIN-DT2,locked_out_user,wrong_password,false,Username and password do not match
+>>>>>>> 350734023e42072d854be64b808207b946920a70
