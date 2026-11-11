@@ -1,0 +1,23 @@
+page,locator,action,value
+login,https://www.saucedemo.com,open,
+login,id:user-name,type,standard_user
+login,id:password,type,secret_sauce
+login,id:login-button,click,
+inventory,url,assertUrl,inventory.html
+inventory,id:add-to-cart-sauce-labs-backpack,click,
+inventory,css:.shopping_cart_badge,assertText,1
+inventory,css:.shopping_cart_link,click,
+cart,url,assertUrl,cart.html
+cart,id:checkout,click,
+checkout-step-one,url,assertUrl,checkout-step-one.html
+checkout-step-one,id:first-name,type,An
+checkout-step-one,id:last-name,type,Nguyen
+checkout-step-one,id:postal-code,type,700000
+checkout-step-one,id:continue,click,
+checkout-step-two,url,assertUrl,checkout-step-two.html
+checkout-step-two,css:.summary_subtotal_label,assertText,Item total: $29.99
+checkout-step-two,css:.summary_tax_label,assertText,Tax: $2.40
+checkout-step-two,css:.summary_total_label,assertText,Total: $32.39
+checkout-step-two,id:finish,click,
+checkout-complete,url,assertUrl,checkout-complete.html
+checkout-complete,css:.complete-header,assertText,Thank you for your order!
