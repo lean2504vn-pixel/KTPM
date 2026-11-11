@@ -78,6 +78,11 @@ public class CheckoutPage {
         return driver.getCurrentUrl();
     }
 
+    public String getLastNameValue() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(LAST_NAME))
+                .getAttribute("value");
+    }
+
     private static final By ERROR = By.cssSelector("[data-test='error']");
 
     private void type(By locator, String value) {
