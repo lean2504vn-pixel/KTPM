@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
@@ -15,6 +16,9 @@ public abstract class WebTestBase {
 
     protected WebDriver driver;
     protected String baseUrl;
+
+    @RegisterExtension
+    ScreenshotOnFailureExtension screenshotOnFailure = new ScreenshotOnFailureExtension(() -> this.driver);
 
     @BeforeEach
     void openBrowser() {
