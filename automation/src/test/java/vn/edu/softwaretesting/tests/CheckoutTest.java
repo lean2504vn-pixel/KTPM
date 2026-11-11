@@ -107,7 +107,7 @@ class CheckoutTest extends WebTestBase {
     }
 
     @Test
-    @DisplayName("TC-CHK-05: Cancel at information step returns to cart.html, item kept")
+    @DisplayName("TC-CHK-UC1: Cancel at information step returns to cart.html, item kept")
     void cancelReturnsToCart() {
         inventory.addToCart(BACKPACK);
         CheckoutPage checkout = inventory.openCart().checkout();
@@ -122,7 +122,7 @@ class CheckoutTest extends WebTestBase {
 
     @Test
     @Tag("known-bug")
-    @DisplayName("TC-CHK-06 [BUG-05]: empty cart must not complete an order")
+    @DisplayName("TC-CHK-UC2 [BUG-05]: empty cart must not complete an order")
     void emptyCartMustNotCompleteOrder() {
         assertFalse(inventory.isBadgeDisplayed(), "Tien dieu kien: gio hang trong");
         CartPage cart = inventory.openCart();
