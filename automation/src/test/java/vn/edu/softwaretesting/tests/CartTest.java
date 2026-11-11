@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,16 +21,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import vn.edu.softwaretesting.core.WebTestBase;
 import vn.edu.softwaretesting.pages.CartPage;
 import vn.edu.softwaretesting.pages.InventoryPage;
 import vn.edu.softwaretesting.pages.InventoryPage.ProductInfo;
 import vn.edu.softwaretesting.pages.LoginPage;
-import vn.edu.softwaretesting.pages.ProblemProductPage;
 
 @Tag("web")
 @Tag("FR-02")
@@ -42,21 +46,54 @@ class CartTest extends WebTestBase {
 
     private static final String FLEECE = "Sauce Labs Fleece Jacket";
     private static final String RED_SHIRT = "Test.allTheThings() T-Shirt (Red)";
-    private ProblemProductPage page;
+    private static final String BOLT_T_SHIRT = "Sauce Labs Bolt T-Shirt";
+    private static final String ONESIE = "Sauce Labs Onesie";
+    private static final String BACKPACK_NAME = "Sauce Labs Backpack";
+    private CartPage page;
 
     @BeforeEach
     void loginForTest(TestInfo testInfo) {
+        // Tuong tu CheckoutTest: tat popup mat khau Chrome truoc khi dang nhap.
+        restartChromeWithoutPasswordPopup();
+
         if (testInfo.getTags().contains("known-bug")) {
             var result = new LoginPage(driver, baseUrl).open()
                     .login("problem_user", "secret_sauce");
             assertTrue(result.accepted(), "Tien dieu kien: dang nhap problem_user thanh cong");
-            page = new ProblemProductPage(driver).waitForInventory();
+            page = new CartPage(driver).waitForInventory();
         } else {
             var result = new LoginPage(driver, baseUrl).open()
                     .login("standard_user", "secret_sauce");
             assertTrue(result.accepted(), "Tien dieu kien: dang nhap standard_user thanh cong");
             inventory = new InventoryPage(driver);
         }
+    }
+
+    /**
+     * Dong bo cau hinh Chrome voi CheckoutTest de tranh popup Password Manager
+     * che nut Add/Remove khi chay Selenium/CI. Khong can thiep Firefox.
+     * WebTestBase se dong driver hien tai sau moi test.
+     */
+    private void restartChromeWithoutPasswordPopup() {
+        if (!(driver instanceof ChromeDriver)) {
+            return;
+        }
+
+        driver.quit();
+        ChromeOptions options = new ChromeOptions();
+        if (Boolean.parseBoolean(System.getProperty("headless", "true"))) {
+            options.addArguments("--headless=new");
+        }
+        options.addArguments("--disable-search-engine-choice-screen",
+                "--disable-features=PasswordLeakDetection");
+        options.setExperimentalOption("prefs", Map.of(
+                "credentials_enable_service", false,
+                "profile.password_manager_enabled", false,
+                "profile.password_manager_leak_detection", false));
+
+        driver = new ChromeDriver(options);
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(20));
+        driver.manage().window().setSize(new Dimension(1440, 900));
     }
 
     @Test
@@ -260,78 +297,106 @@ class CartTest extends WebTestBase {
                 });
     }
 
+    // BUG-10: Khi Add tai Detail, problem_user co the them SAI san pham vao Cart.
+    // Hai test dung chung logic nhung tach rieng de co report va screenshot cho tung truong hop.
     @Test
     @Tag("known-bug")
-    @DisplayName("[BUG-10] TC-CART-PROB4: T-Shirt Red phai dong bo trang chi tiet, Inventory va Cart")
-    void bug10_redShirtDetailAndCartMustAgree() {
-        int before = page.badgeCount();
-        // Direct URL isolates BUG-10 from broken product links (BUG-07).
-        page.openDetailById(3); // Test.allTheThings() T-Shirt (Red)
-        assertEquals(RED_SHIRT, page.detailInfo().name(),
-                "Tien dieu kien: phai mo dung chi tiet T-Shirt Red");
-        assertEquals("ADD", page.buttonStateInDetail(), "Trang chi tiet phai bat dau bang Add");
-        page.clickDetailAdd();
-
-        String detailState = page.buttonStateInDetail();
-        int badgeAfterAdd = page.badgeCount();
-        page.backToProducts();
-        String inventoryState = page.buttonStateAtInventory(RED_SHIRT);
-        page.openCartDirectly();
-        boolean existsInCart = page.cartContains(RED_SHIRT);
-
-        // Dung trang Cart de don dep neu co san pham (ghi nhan tinh huong xoa duoc).
-        // Khong xoa neu khong co san pham, de assertAll ghi du cac dieu kien sai.
-        if (existsInCart) {
-            page.clickCartRemove(RED_SHIRT);
-        }
-        int badgeAfterCartRemove = page.badgeCount();
-        boolean remainsInCart = page.cartContains(RED_SHIRT);
-
-        assertAll("[BUG-10] Trang chi tiet, Inventory va Cart phai thong nhat",
-                () -> assertEquals("REMOVE", detailState, "Sau Add, chi tiet phai hien Remove"),
-                () -> assertEquals(before + 1, badgeAfterAdd, "Badge sau Add phai tang 1"),
-                () -> assertEquals("REMOVE", inventoryState, "Inventory phai hien Remove"),
-                () -> assertTrue(existsInCart, "T-Shirt Red phai co trong Cart"),
-                () -> assertEquals(before, badgeAfterCartRemove, "Remove trong Cart phai giam badge"),
-                () -> assertFalse(remainsInCart, "Remove trong Cart phai xoa san pham"));
+    @DisplayName("[BUG-10][TH1] Add Bolt T-Shirt tai Detail khong duoc them Onesie")
+    void bug10_boltTShirtDetailMustAddBoltTShirt() {
+        verifyBug10DetailAddsCorrectProduct(BOLT_T_SHIRT, ONESIE, "TH1_Bolt_T_Shirt");
     }
 
     @Test
     @Tag("known-bug")
-    @DisplayName("[BUG-10] T-Shirt Red: Remove tai trang chi tiet phai hoat dong")
-    void bug10_redShirtRemoveInDetailMustWork() {
-        int before = page.badgeCount();
-        // Direct URL isolates BUG-10 from broken product links (BUG-07).
-        page.openDetailById(3); // Test.allTheThings() T-Shirt (Red)
-        assertEquals(RED_SHIRT, page.detailInfo().name(),
-                "Tien dieu kien: phai mo dung chi tiet T-Shirt Red");
-        assertEquals("ADD", page.buttonStateInDetail(), "Trang chi tiet phai bat dau bang Add");
+    @DisplayName("[BUG-10][TH2] Add T-Shirt Red tai Detail khong duoc them Backpack")
+    void bug10_redShirtDetailMustAddRedShirt() {
+        verifyBug10DetailAddsCorrectProduct(RED_SHIRT, BACKPACK_NAME, "TH2_Red_T_Shirt");
+    }
+
+    /**
+     * Di theo dung thao tac thu cong: click TEN san pham tren Inventory -> Detail -> Add.
+     * Khong mo URL theo id vi nhu vay co the bo qua loi xay ra khi nguoi dung click ten.
+     * Chi assert sau khi da doc trang thai Inventory va Cart de ghi nhan du bang chung.
+     */
+    private void verifyBug10DetailAddsCorrectProduct(
+            String chosenProduct, String unexpectedlyAddedProduct, String caseId) {
+        int badgeBefore = page.badgeCount();
+        String chosenBefore = page.buttonStateAtInventory(chosenProduct);
+        String otherBefore = page.buttonStateAtInventory(unexpectedlyAddedProduct);
+
+        // Tien dieu kien: ca hai san pham chua co trong gio; du lieu can trong.
+        assertAll("[BUG-10] Tien dieu kien " + caseId,
+                () -> assertEquals(0, badgeBefore, "Badge ban dau phai = 0"),
+                () -> assertEquals("ADD", chosenBefore, "San pham duoc chon phai chua trong Cart"),
+                () -> assertEquals("ADD", otherBefore, "San pham khac phai chua trong Cart"));
+
+        page.openDetail(chosenProduct);
+        String detailName = page.detailInfo().name();
+        String detailButtonBefore = page.buttonStateInDetail();
+        assertEquals("ADD", detailButtonBefore, "Trang Detail phai co nut Add to cart truoc thao tac");
         page.clickDetailAdd();
-        int afterAdd = page.badgeCount();
-        String stateAfterAdd = page.buttonStateInDetail();
 
-        // Neu nut Remove khong xuat hien, assert fail co thong diep thay vi doi timeout.
-        if ("REMOVE".equals(stateAfterAdd)) {
-            page.clickDetailRemove();
-        }
-        String afterRemove = page.buttonStateInDetail();
-        int badgeAfterRemove = page.badgeCount();
+        int badgeAfter = page.badgeCount();
+        String detailButtonAfter = page.buttonStateInDetail();
+
+        // BUG-10 kiem tra san pham duoc them, khong kiem tra nut Back to Products.
+        // Ve Inventory bang URL truc tiep de tranh Timeout neu dieu huong Back bi loi.
+        // Van giu nguyen session/Cart cua WebDriver hien tai.
+        page.openInventoryDirectly();
+        String chosenAfter = page.buttonStateAtInventory(chosenProduct);
+        String otherAfter = page.buttonStateAtInventory(unexpectedlyAddedProduct);
+
         page.openCartDirectly();
-        boolean remains = page.cartContains(RED_SHIRT);
+        int cartItemCount = page.cartItemCount();
+        boolean chosenInCart = page.cartContains(chosenProduct);
+        boolean otherInCart = page.cartContains(unexpectedlyAddedProduct);
 
-        assertAll("[BUG-10] Remove tai trang chi tiet",
-                () -> assertEquals(before + 1, afterAdd, "Add phai lam badge tang"),
-                () -> assertEquals("REMOVE", stateAfterAdd, "Sau Add phai co nut Remove"),
-                () -> assertEquals("ADD", afterRemove, "Sau Remove phai tro ve Add"),
-                () -> assertEquals(before, badgeAfterRemove, "Badge phai giam ve ban dau"),
-                () -> assertFalse(remains, "Cart khong duoc con T-Shirt Red"));
+        String snapshot = String.join(System.lineSeparator(),
+                "[BUG-10] " + caseId + " - Add sai san pham tu Detail",
+                "San pham click tai Inventory: " + chosenProduct,
+                "Ten hien thi tai Detail: " + detailName,
+                "San pham khac can doi chieu: " + unexpectedlyAddedProduct,
+                "Badge truoc/sau Add: " + badgeBefore + " / " + badgeAfter,
+                "Nut Detail truoc/sau Add: " + detailButtonBefore + " / " + detailButtonAfter,
+                "Nut Inventory san pham da chon: " + chosenBefore + " -> " + chosenAfter,
+                "Nut Inventory san pham khac: " + otherBefore + " -> " + otherAfter,
+                "So san pham thuc te trong Cart: " + cartItemCount,
+                "Cart co san pham da chon: " + chosenInCart,
+                "Cart co san pham khac: " + otherInCart);
+        System.out.println(snapshot);
+
+        try {
+            Path folder = Path.of("evidence");
+            Files.createDirectories(folder);
+            Files.writeString(folder.resolve("BUG-10_" + caseId + ".txt"), snapshot);
+        } catch (Exception e) {
+            System.err.println("Khong ghi duoc evidence BUG-10: " + e.getMessage());
+        }
+
+        // Expected: chi san pham da chon duoc them; san pham khac khong bi tac dong.
+        // Khi bug xuat hien, assertAll giup bao cao dong thoi ca trang thai nut va Cart.
+        assertAll("[BUG-10] " + caseId + ": Add tai Detail phai dung san pham",
+                () -> assertEquals(badgeBefore + 1, badgeAfter,
+                        "Badge phai tang dung 1 sau khi Add"),
+                () -> assertEquals("REMOVE", detailButtonAfter,
+                        "Nut tren Detail phai chuyen thanh Remove"),
+                () -> assertEquals("REMOVE", chosenAfter,
+                        "Inventory phai hien Remove cho san pham da chon: " + chosenProduct),
+                () -> assertEquals("ADD", otherAfter,
+                        "Inventory KHONG duoc hien Remove cho san pham khac: " + unexpectedlyAddedProduct),
+                () -> assertEquals(1, cartItemCount,
+                        "Cart phai co dung 1 san pham"),
+                () -> assertTrue(chosenInCart,
+                        "Cart phai chua san pham da chon: " + chosenProduct),
+                () -> assertFalse(otherInCart,
+                        "Cart KHONG duoc chua san pham khac: " + unexpectedlyAddedProduct));
     }
 
     @Test
     @Tag("known-bug")
     @DisplayName("[BUG-07] Ten san pham o Inventory va trang chi tiet phai khop")
     void bug07_productNamesMustMatchDetails() {
-        List<ProblemProductPage.ProductTile> tiles = page.productTiles();
+        List<CartPage.ProductTile> tiles = page.productTiles();
         assertEquals(6, tiles.size(), "Inventory phai co 6 san pham");
         for (var tile : tiles) {
             page.openDetail(tile.name());
@@ -348,7 +413,7 @@ class CartTest extends WebTestBase {
     void bug08_inventoryImagesShouldNotAllBeSame() {
         var tiles = page.productTiles();
         assertEquals(6, tiles.size());
-        long distinct = tiles.stream().map(ProblemProductPage.ProductTile::imageSrc)
+        long distinct = tiles.stream().map(CartPage.ProductTile::imageSrc)
                 .filter(url -> url != null && !url.isBlank()).distinct().count();
         assertEquals(6L, distinct,
                 "Sau san pham dang co " + distinct + " anh phan biet (mong doi 6); co the dang cung anh cho");
