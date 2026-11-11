@@ -7,7 +7,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,9 +21,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 
 import vn.edu.softwaretesting.core.WebTestBase;
 import vn.edu.softwaretesting.pages.CartPage;
@@ -48,6 +53,9 @@ class CartTest extends WebTestBase {
 
     @BeforeEach
     void loginForTest(TestInfo testInfo) {
+        // Tuong tu CheckoutTest: tat popup mat khau Chrome truoc khi dang nhap.
+        restartChromeWithoutPasswordPopup();
+
         if (testInfo.getTags().contains("known-bug")) {
             var result = new LoginPage(driver, baseUrl).open()
                     .login("problem_user", "secret_sauce");
@@ -59,6 +67,33 @@ class CartTest extends WebTestBase {
             assertTrue(result.accepted(), "Tien dieu kien: dang nhap standard_user thanh cong");
             inventory = new InventoryPage(driver);
         }
+    }
+
+    /**
+     * Dong bo cau hinh Chrome voi CheckoutTest de tranh popup Password Manager
+     * che nut Add/Remove khi chay Selenium/CI. Khong can thiep Firefox.
+     * WebTestBase se dong driver hien tai sau moi test.
+     */
+    private void restartChromeWithoutPasswordPopup() {
+        if (!(driver instanceof ChromeDriver)) {
+            return;
+        }
+
+        driver.quit();
+        ChromeOptions options = new ChromeOptions();
+        if (Boolean.parseBoolean(System.getProperty("headless", "true"))) {
+            options.addArguments("--headless=new");
+        }
+        options.addArguments("--disable-search-engine-choice-screen",
+                "--disable-features=PasswordLeakDetection");
+        options.setExperimentalOption("prefs", Map.of(
+                "credentials_enable_service", false,
+                "profile.password_manager_enabled", false,
+                "profile.password_manager_leak_detection", false));
+
+        driver = new ChromeDriver(options);
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(20));
+        driver.manage().window().setSize(new Dimension(1440, 900));
     }
 
     @Test
